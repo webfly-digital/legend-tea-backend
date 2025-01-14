@@ -1,0 +1,6 @@
+<?
+$sSectionName = "Миграция";
+$arDirProperties = Array(
+
+);
+?>

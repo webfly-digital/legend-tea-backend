@@ -1,0 +1,1 @@
+<img width="307" alt="Лого ЛЧ.jpg" src="/upload/medialibrary/10d/10dc0c3ccfba4890cffb699b58bc00b6.jpg" height="230" title="Лого ЛЧ.jpg">

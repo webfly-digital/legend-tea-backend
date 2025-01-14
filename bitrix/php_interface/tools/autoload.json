@@ -1,0 +1,10 @@
+{
+  "autoload": {
+    "psr-4": {
+      "Webfly\\": "/bitrix/php_interface/lib/Webfly",
+      "Vendor\\": "/bitrix/php_interface/lib/Vendor",
+      "Gricuk\\": "/bitrix/php_interface/lib/Gricuk",
+      "setasign\\Fpdi\\": "/bitrix/php_interface/lib/src/src"
+    }
+  }
+}

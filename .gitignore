@@ -1,0 +1,34 @@
+# Игнорируем всё содержимое папки bitrix и папку logs
+/bitrix/*
+/logs/
+
+# Исключаем из игнорирования сами папки, чтобы их содержимое можно было обработать
+!bitrix/components/
+bitrix/components/*
+!bitrix/php_interface/
+bitrix/php_interface/*
+!bitrix/templates/
+bitrix/templates/*
+
+# Исключаем конкретные файлы и папки внутри components
+!bitrix/components/bxmaker/
+!bitrix/components/ipol/
+!bitrix/components/webfly/
+!bitrix/components/.access.php
+
+# Исключаем конкретные файлы и папки внутри php_interface
+!bitrix/php_interface/include/
+!bitrix/php_interface/lib/
+!bitrix/php_interface/s3/
+!bitrix/php_interface/subscribe/
+!bitrix/php_interface/tools/
+!bitrix/php_interface/cron_events.php
+!bitrix/php_interface/init.php
+!bitrix/php_interface/this_site_support.php
+
+# Исключаем папки используемых шаблонов сайтов
+!bitrix/templates/call_app/
+!bitrix/templates/mobile_app/
+!bitrix/templates/desktop_app/
+!bitrix/templates/learning/
+!bitrix/templates/pub/

@@ -1,0 +1,201 @@
+.text, li, td {
+    font-family: Verdana, Arial;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4 {
+    margin-bottom: .4em;
+    margin-top: 2em;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 140%;
+}
+
+h2 {
+    font-size: 120%;
+    line-height: 100%;
+}
+
+h3 {
+    margin-left: 0em;
+    font-size: 115%;
+}
+
+h4 {
+    font-size: 100%;
+}
+
+
+pre.syntax {
+    font-family: Courier New;
+    background-color: #EEEEEE;
+    padding: 1em 1em 1em 1em;
+    border: 1px solid #DDD;
+    width: 600px;
+    height: 80px;
+    overflow: auto;
+}
+
+code {
+    font-family: Courier New, Verdana, Arial;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+div.hint, div.important {
+    font-family: Verdana, Arial;
+    font-size: 12px;
+    background: #f9fafe url(icons/prim.gif) no-repeat 0.5em 1em;
+    padding: 1em 1em 1em 2em;
+    border: 1px solid #BCCCDC;
+}
+
+div.important {
+    background-image: url(icons/imp.gif);
+}
+
+li {
+    padding: 4px;
+}
+
+/* Spoiler */
+table.learning-spoiler thead {
+    cursor: pointer;
+    cursor: hand;
+}
+
+table.learning-spoiler thead div {
+    padding-left: 15px;
+    background-image: url('./images/plus.gif');
+    background-position: left center;
+    background-repeat: no-repeat;
+}
+
+table.learning-spoiler thead.learning-spoiler-head-open div {
+    background-image: url('./images/minus.gif');
+}
+
+table.learning-spoiler {
+    border: 1px solid #dddddd;
+    table-layout: fixed;
+    padding: 3px;
+    width: 100%;
+}
+
+table.learning-spoiler td {
+    color: #696969;
+}
+
+table.learning-spoiler th {
+    font-weight: bold;
+    text-align: left;
+    color: #888;
+}
+
+/* /Spoiler */
+/*стили для вывода информации об авторе курса*/
+.author-row {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px 0;
+}
+
+.author-row .author-block {
+    display: flex;
+    font-family: Verdana;
+    font-size: 18px;
+    font-display: swap;
+}
+
+.author-row .author-block .left {
+    flex-shrink: 0;
+    margin-right: 20px;
+}
+
+.author-row .author-block .left .photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.author-row .author-block .left .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.author-row .author-block .right {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: white;
+}
+
+.author-row .author-block .right .row {
+    display: flex;
+    align-items: center;
+}
+
+.author-row .author-block .right .row .key {
+    margin-right: 5px;
+}
+
+
+.search-academy {
+    margin-left: auto;
+}
+
+input.courses-search {
+    padding: 12px 12px;
+    width: 320px;
+    border-radius: 0 !important;
+    border: 0;
+    outline: 0;
+}
+input.courses-search::placeholder {
+    color: #000000 !important;
+}
+
+input[type=submit] {
+    padding: 12px 12px;
+    width: 120px;
+    border-radius: 0 !important;
+    border: 0;
+    outline: 0;
+    background-color: #fff;
+
+}
+
+@media (max-width: 1200px) {
+    .search-academy {
+        margin-right: auto
+    }
+
+    input.courses-search {
+        width: 200px;
+    }
+
+    input[type=submit] {
+        width: 96px;
+        color: #000000 !important;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .search-academy {
+        margin-right: unset;
+        padding-top: 12px !important;
+        padding-bottom: 4px !important;
+    }
+
+    input.courses-search {
+        width: calc(100vw - 96px - 16px - 6px);
+    }
+}
+
+
