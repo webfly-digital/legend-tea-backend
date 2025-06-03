@@ -1,0 +1,94 @@
+.sku_props .list_values_wrapper li h2 {
+   margin: 0 !important;
+}
+
+.sku_props .list_values_wrapper li {
+   opacity: 0.5 !important;
+   border: none !important;
+   background: transparent !important;
+   margin-top: 0 !important;
+   margin-bottom: 10px;
+   margin-left: 16px;
+   cursor: pointer;
+}
+
+.sku_props .list_values_wrapper li.active {
+   opacity: 1 !important;
+}
+
+.sku_props .list_values_wrapper li span {
+   color: #464646 !important;
+   color: black !important;
+}
+
+.sku_props .list_values_wrapper li h2{
+   color: black !important;
+}
+
+.sku_props .list_values_wrapper {
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: space-between;
+   margin-left: -16px;
+}
+.sku_props .list_values_wrapper li:first-child{
+   /* margin-left: 0 !important; */
+}
+
+.sku_props .dropdown-select__title{
+   border: 1px solid grey;
+   border-radius: 6px;
+   padding-left: 10px;
+}
+
+.sku_props .dropdown-select__list.dropdown-menu-wrapper{
+   width: 100%;
+}
+
+.sku_props .dropdown-select__list-link.active{
+  opacity: 1 !important;
+}
+
+.pomol_select .dropdown-select__list-link.active{
+   background: #f8f9fb;
+}
+.sku_props ul li.missing,
+.sku_props .dropdown-select__list-link.missing
+{
+   opacity: .4;
+}
+
+
+/*element3*/
+.wrapper_inner.wide_page .product-view--type2 .product-info.product-info--type2 {
+   padding-top: 2.2rem;
+   padding-bottom: 2.2rem;
+}
+.product-view--type2 .product-info.product-info--type2 > .flexbox > .product-detail-gallery {
+   padding: 0px;
+   width: 42%;
+}
+
+.product-info.product-info--type2
+.product-detail-gallery__slider.thmb.product-detail-gallery__slider--vertical.m-photo {
+   left: -115px;
+}
+.product-info.product-info--type2
+.product-detail-gallery__slider.thmb.product-detail-gallery__slider--vertical[data-size="2"] {
+   left: -31px;
+}
+.product-info.product-info--type2
+.product-detail-gallery__slider.thmb.product-detail-gallery__slider--vertical[data-size="1"] {
+   left: 4px;
+}
+.product-info.product-info--type2 .product-detail-gallery__thmb-container .vertical > div.video-block.popup_video {
+   top: 4.133rem;
+}
+.product-info.product-info--type2 .product-detail-gallery__slider.thmb.product-detail-gallery__slider--vertical {
+   max-height: 210px;
+}
+
+.product-info.product-info--type2 .product-chars .list-sales-compact {
+   padding-top: 0px;
+   padding-left: 42px;
+}

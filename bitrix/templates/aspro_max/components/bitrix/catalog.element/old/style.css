@@ -1,0 +1,46 @@
+#sku .sku_props .list_values_wrapper li h2 {
+   margin: 0 !important;
+}
+
+#sku .sku_props .list_values_wrapper li {
+   opacity: 0.5 !important;
+   border: none !important;
+   background: transparent !important;
+   margin-top: 0 !important;
+   margin-bottom: 10px;
+   margin-left: 16px;
+   cursor: pointer;
+}
+
+#sku .sku_props .list_values_wrapper li.active {
+   opacity: 1 !important;
+}
+
+#sku .sku_props .list_values_wrapper li span {
+   color: #464646 !important;
+   color: black !important;
+}
+
+#sku .sku_props .list_values_wrapper li h2{
+   color: black !important;
+}
+
+#sku .sku_props .list_values_wrapper {
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: space-between;
+   margin-left: -16px;
+}
+#sku .sku_props .list_values_wrapper li:first-child{
+   /* margin-left: 0 !important; */
+}
+
+#sku .dropdown-select__title{
+   border: 1px solid grey;
+   border-radius: 6px;
+   padding-left: 10px;
+}
+
+#sku .dropdown-select__list.dropdown-menu-wrapper{
+   width: 100%;
+}
