@@ -6,6 +6,34 @@ if(isset($APPLICATION->arAuthResult)){
 	$arResult['ERROR_MESSAGE'] = $APPLICATION->arAuthResult;
 }
 
+// --- доп.проверка логин/е-mail ---
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['USER_LOGIN']) &&
+    isset($arResult['ERROR_MESSAGE']) &&
+    $arResult['ERROR_MESSAGE']['TYPE'] === 'OK'
+) {
+    $login = trim($_POST['USER_LOGIN']);
+
+    $rsUser = CUser::GetList(
+        $by = 'id',
+        $order = 'asc',
+        [
+            'LOGIC'  => 'OR',
+            '=LOGIN' => $login,
+            '=EMAIL' => $login,
+        ]
+    );
+
+    if (!$rsUser->Fetch()) {
+        $arResult['ERROR_MESSAGE'] = [
+            'MESSAGE' => 'Пользователя с таким e-mail не найден, просим <a href="/auth/registration/" style="text-decoration: underline; color: #0066cc;">зарегистрироваться</a> в интернет-магазине.',
+            'TYPE'    => 'ERROR',
+        ];
+    }
+}
+// --- конец доп.проверки ---
+
 global $arTheme;
 
 $bEmailAsLogin = $arTheme['LOGIN_EQUAL_EMAIL']['VALUE'] === 'Y';
@@ -123,6 +151,13 @@ $bByPhoneRequest = $arResult['PHONE_REGISTRATION'] && isset($_POST['USER_PHONE_N
 				$form.find('input[name=USER_LOGIN]').val(test.value);
 			}
 		});
+        // если введён e-mail, дублируем его в скрытое USER_EMAIL
+        $('#forgotpasswd-page-form').on('submit', function(){
+            var val = $('#FORGOTPASSWD_USER_LOGIN').val();
+            if (val && val.indexOf('@') !== -1){
+                $(this).find('input[name=USER_EMAIL]').val(val);
+            }
+        });
 	});
 	</script>
 </div>
