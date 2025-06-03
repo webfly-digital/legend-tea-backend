@@ -5,10 +5,80 @@ namespace Webfly\Helper;
 use Bitrix\Main\Loader;
 
 
-Loader::includeModule('iblock');
+
+\Bitrix\Main\Loader::includeModule('crm');
+\Bitrix\Main\Loader::includeModule('sale');
+\Bitrix\Main\Loader::IncludeModule('im');
+\Bitrix\Main\Loader::IncludeModule('iblock');
 
 class Helper
 {
+
+    public static function getPhonesArraySearch($phone)
+    {
+        $phonesForSearch = [];
+        $phoneClear = preg_replace('/[^0-9]/', '', $phone);
+        $firstSymbol = mb_substr($phoneClear, 0, 1);
+        $phoneTrim = mb_substr($phoneClear, 1);
+        $phonesForSearch[] = $phoneClear;
+        if ($firstSymbol == 7) {
+            $phonesForSearch[] = "8{$phoneTrim}";
+        } elseif ($firstSymbol == 8) {
+            $phonesForSearch[] = "7{$phoneTrim}";
+        }
+        return $phonesForSearch;
+    }
+
+    public static function searchContactByUserPhone($userID = '')
+    {
+        if (empty($userID)) {
+            global $USER;
+            $userID = $USER->GetID();
+        }
+
+        if (empty($userID)) return;
+
+        \Bitrix\Main\Loader::includeModule('crm');
+        $arId = [];
+
+        $res = \Bitrix\Main\UserTable::getList([
+            'order' => ['ID' => 'desc',],
+            'select' => ['PERSONAL_PHONE', 'ID', 'PHONE_NUMBER' => 'PHONE_AUTH.PHONE_NUMBER',],
+            'filter' => ['ID' => $userID],
+        ]);
+        while ($item = $res->fetch()) {
+            $arPhone[] = $item['PERSONAL_PHONE'];
+            $arPhone[] = $item['PHONE_NUMBER'];
+        }
+
+        if (!empty($arPhone)) {
+            $arPhoneClear = [];
+            $arPhone = array_unique($arPhone);
+            foreach ($arPhone as $phone) {
+                $arPhoneClear = array_merge($arPhoneClear, self::getPhonesArraySearch($phone));
+            }
+        }
+
+
+        $filter = [
+            'PHONE_CLEAR' => $arPhoneClear,
+            'TYPE_ID' => 'PHONE',
+            'ENTITY_ID' => 'CONTACT',
+        ];
+
+        $resultPhone = \Bitrix\Crm\FieldMultiTable::getList([
+            'filter' => $filter,
+            'select' => ['ELEMENT_ID'],
+            'runtime' => [
+                new \Bitrix\Main\Entity\ExpressionField('PHONE_CLEAR', 'REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, "-", ""), "+", ""), "(", ""), ")", ""), " ", "")', ['VALUE']),
+            ]
+        ]);
+        while ($ob_item = $resultPhone->fetch()) {
+            $arId[] = $ob_item['ELEMENT_ID'];
+        }
+
+        return $arId;
+    }
 
     public static function getSectionView($sectionId)
     {
@@ -20,21 +90,22 @@ class Helper
         return $enum["XML_ID"] ?: 'SIMPLE';
     }
 
-    public static function getCatalogSections($filter = [])
+    public static function getCatalogSections($filter = [], $returnElemIds = false)
     {
         $sects = [];
         $sections = [];
-        $res = \CIBlockElement::getList([], $filter, ['IBLOCK_SECTION_ID'], false, ['IBLOCK_SECTION_ID']);
+
+        $res = \CIBlockElement::getList([], $filter, false, false, ['ID', 'IBLOCK_SECTION_ID']);
         while ($ob = $res->fetch()) {
-            if ($ob['CNT'] > 0)
-                $sects[] = $ob;
+            $sects[$ob['IBLOCK_SECTION_ID']][] = $ob['ID'];
         }
         unset ($ob);
         unset ($res);
 
+
         $sectIDs = [];
         if ($sects) {
-            $sectIDs = array_column($sects, 'IBLOCK_SECTION_ID');
+            $sectIDs = array_keys($sects);
             $res = \CIBlockSection::getList(['NAME' => 'asc'], ['ID' => $sectIDs, 'IBLOCK_ID' => CATALOG_IBLOCK_ID, '>DEPTH_LEVEL' => 1], false, ['ID', 'NAME', 'SORT', 'CODE'], false);
             while ($ob = $res->fetch()) {
                 $sections[$ob['ID']] = $ob;
@@ -61,6 +132,15 @@ class Helper
                 }
                 return ($a['NAME'] < $b['NAME']) ? -1 : 1;
             });
+        }
+
+        if ($returnElemIds) {
+            $res['SECTS'] = $sections;
+            $res['ELEMS'] = [];
+            foreach ($sects as $sect) {
+                $res['ELEMS'] = array_merge($res['ELEMS'], array_values($sect));
+            }
+            return $res;
         }
         return $sections;
     }
@@ -579,12 +659,86 @@ class Helper
     }
 
 
-    public static function getPropertyProduct($type, $props)
+    public static function getPropertyLabel($props)
     {
+        \Bitrix\Main\Loader::includeModule("highloadblock");
+
+        foreach ($props['PROPERTIES'] as $key => $prop) {
+            if ($key == 'HIT') {
+                switch (mb_strtolower($prop['VALUE'])) {
+                    case 'новинка':
+                        $label = ['CLASS' => 'green', 'ICON' => 'new', 'TEXT' => 'Новинка'];
+                        break;
+                    case 'хит':
+                        $label = ['CLASS' => 'red', 'ICON' => 'fire', 'TEXT' => 'Хит'];
+                        break;
+                    case 'рекомендуем':
+                        $label = ['CLASS' => 'yellow', 'ICON' => 'thumb-up', 'TEXT' => 'Советуем'];
+                        break;
+                    default:
+                        $label = '';
+                        break;
+                }
+                if ($label)
+                    $arrayProp[] = $label;
+            }
+            if ($key == 'REKOMENDUEM' && !empty($prop['VALUE'])) {
+                $hlblock = \Bitrix\Highloadblock\HighloadBlockTable::getById(HL_RECOMEND)->fetch();
+                $entity = \Bitrix\Highloadblock\HighloadBlockTable::compileEntity($hlblock);
+                $entity_data_class = $entity->getDataClass();
+                $rsData = $entity_data_class::getList(array(
+                    'select' => array('UF_NAME', 'UF_COLOR', 'UF_ICON'),
+                    'filter' => array('UF_XML_ID' => $prop['VALUE'])
+                ));
+                while ($el = $rsData->fetch()) {
+                    $label = ['CLASS' => $el["UF_COLOR"] ?: "green", 'ICON' => $el["UF_ICON"] ?: "icon-star", 'TEXT' => $el["UF_NAME"],];
+                    $arrayProp[] = $label;
+                }
+            }
+        }
+
+        return $arrayProp;
+    }
+
+    public static function getPropertySostav($props)
+    {
+        \Bitrix\Main\Loader::includeModule("highloadblock");
+
+        foreach ($props['PROPERTIES'] as $key => $prop) {
+            if ($key == 'SOSTAV_DLYA_KARTINOK_V_TOVARE' && !empty($prop['VALUE'])) {
+                $hlblock = \Bitrix\Highloadblock\HighloadBlockTable::getById(HL_SOSTAV)->fetch();
+                $entity = \Bitrix\Highloadblock\HighloadBlockTable::compileEntity($hlblock);
+                $entity_data_class = $entity->getDataClass();
+                $rsData = $entity_data_class::getList(array(
+                    'select' => array('UF_NAME', 'UF_FILE'),
+                    'filter' => array('UF_XML_ID' => $prop['VALUE'])
+                ));
+                while ($el = $rsData->fetch()) {
+                    if ($el["UF_FILE"]) {
+                        $label = ['TEXT' => $el["UF_NAME"], 'IMG' => \CFile::getPath($el["UF_FILE"])];
+                        $arrayProp[] = $label;
+                    }
+                }
+            }
+        }
+
+        return $arrayProp;
+    }
+
+    public static function getPropertyProduct($type = 'other', $props)
+    {
+
         $arrayProp = [];
         if ($type == 'tea') {
-            $characteristic = ['REGION', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER', 'VID_CHAYA', 'OSNOVA', 'KATEGORIYA_CHAYA', 'SOSTAV_DLYA_KARTINOK_V_TOVARE'];
-            $scale = ['SKOROST_ZAVARIVANIYA', 'KREPOST', 'AROMAT', 'VKUS_1'];
+            $characteristic = ['REGION', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER', 'VID_CHAYA', 'OSNOVA', 'KATEGORIYA_CHAYA'];
+
+            $scale = [
+                'SKOROST_ZAVARIVANIYA' => ['Медленно', 'Средне', 'Быстро', 'Очень быстро'],
+                'KREPOST' => ['Легкий', 'Умеренный', 'Крепкий', 'Очень крепкий'],
+                'AROMAT' => ['Почти отсутствует', 'Слабый', 'Умеренный', 'Яркий'],
+                'VKUS_1' => ['Очень слабый', 'Слабый', 'Средний', 'Насыщенный'],
+            ];
+
 
             foreach ($props['PROPERTIES'] as $key => $prop) {
                 if ($key == 'VREMYA_ZAVARIVANIYA' && !empty($prop['VALUE'])) {
@@ -606,16 +760,158 @@ class Helper
                     $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
                     $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
                 }
-                if (in_array($key, $scale) && !empty($prop['VALUE'])) {
-                    $arrayProp['SCALE'][$key]['TITLE'] = $prop['NAME'];
-                    $arrayProp['SCALE'][$key]['VALUE'] = $prop['VALUE'];
+
+                if ($scale[$key]) {
+                    if (!empty($prop['VALUE'])) {
+                        $arrayProp['SCALE_COUNT'] = 4;
+                        $value = array_search($prop['VALUE'], $scale[$key]);
+                        if (isset($value)) {
+                            $arrayProp['SCALE'][$key]['TITLE'] = $prop['NAME'];
+                            $arrayProp['SCALE'][$key]['VALUE_NUMBER'] = $value;
+                            $arrayProp['SCALE'][$key]['VALUE'] = $prop['VALUE'];
+                            $arrayProp['SCALE'][$key]['SCALE_COUNT'] = 4;
+                        }
+                    }
+
                 }
             }
         }
 
 
+        if ($type == 'coffee') {
+            $characteristic = ['REGION', 'CML2_MANUFACTURER', 'OSNOVA', 'VID_KOFE', 'RAZMER_ZERNA', 'STEPEN_OBZHARKI'];
 
+            $scale = [
+                'PLOTNOST' => ['Медленно', 'Средне', 'Быстро', 'Очень быстро'],
+                'KISLOTNOST' => ['Легкий', 'Умеренный', 'Крепкий', 'Очень крепкий'],
+                'KREPOST' => ['Почти отсутствует', 'Слабый', 'Умеренный', 'Яркий'],
+                'PLOTNOST_1' => ['Очень слабый', 'Слабый', 'Средний', 'Насыщенный'],
+            ];
+
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+                if ($scale[$key]) {
+                    if (!empty($prop['VALUE'])) {
+                        $arStr = explode('/', $prop['VALUE']);
+                        $arrayProp['SCALE_COUNT'] = 5;
+                        if (count($arStr) == 2 && $arStr[0] > 0) {
+                            $value = $arStr[0] / 2;
+                            $valueHalf = fmod($value, 1);
+                            $arrayProp['SCALE'][$key]['TITLE'] = $prop['NAME'];
+                            $arrayProp['SCALE'][$key]['VALUE_NUMBER'] = intval($value);
+                            if ($valueHalf > 0) $arrayProp['SCALE'][$key]['VALUE_NUMBER_HALF'] = true;
+                            $arrayProp['SCALE'][$key]['VALUE'] = $prop['VALUE'];
+                            $arrayProp['SCALE'][$key]['SCALE_COUNT'] = 5;
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+
+        if ($type == 'dishes') {
+            $characteristic = ['CML2_BAR_CODE', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER', 'TSVET_1', 'MATERIAL', 'OBEM', 'TIP_POSUDY'];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+        if ($type == 'candy') {
+            $characteristic = ['CML2_BAR_CODE', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER', 'OBEM',];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+
+        if ($type == 'hot_drink' || $type == 'pack') {
+            $characteristic = ['CML2_BAR_CODE', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER'];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+
+        if ($type == 'tea_additives') {
+            $characteristic = ['CML2_BAR_CODE', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER', 'TSVET', 'FORMA_VYPUSKA'];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+
+        if ($type == 'green_coffee') {
+            $characteristic = ['RAZNOVIDNOST_1', 'REGION', 'CML2_BASE_UNIT', 'RAZMER_ZERNA', 'OSNOVA'];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+
+        if ($type == 'other') {
+            $characteristic = ['CML2_BAR_CODE', 'CML2_BASE_UNIT', 'CML2_MANUFACTURER',];
+
+            foreach ($props['PROPERTIES'] as $key => $prop) {
+                if (in_array($key, $characteristic) && !empty($prop['VALUE'])) {
+                    $arrayProp['CHARACTERISTIC'][$key]['TITLE'] = $prop['NAME'];
+                    $arrayProp['CHARACTERISTIC'][$key]['VALUE'] = $prop['VALUE'];
+                }
+
+            }
+        }
+
+
+        return $arrayProp;
     }
 
 
+    public static function writeHistory($entityId, $message, $type = 'CONTACT')
+    {
+        $CCrmEvent = new \CCrmEvent();
+        $CCrmEvent->Add(
+            array(
+                'ENTITY_TYPE' => $type,
+                'ENTITY_ID' => $entityId,
+                'EVENT_ID' => 'INFO',
+                'EVENT_TEXT_1' => $message
+            )
+        );
+    }
+
+    public static function sendMessageGroupChat($idChat, $mess, $system = 'Y')
+    {
+        $arMes = array(
+            "TO_CHAT_ID" => $idChat,
+            "FROM_USER_ID" => 1,
+            "MESSAGE" => $mess,
+            "SYSTEM" => $system
+        );
+        \CIMChat::AddMessage($arMes);
+    }
 }

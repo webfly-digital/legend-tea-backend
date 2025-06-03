@@ -2,6 +2,8 @@
 
 namespace Webfly\Helper;
 
+use CSaleOrderUserProps;
+
 \Bitrix\Main\Loader::IncludeModule('sale');
 \Bitrix\Main\Loader::IncludeModule('catalog');
 \Bitrix\Main\Loader::IncludeModule('main');
@@ -9,6 +11,25 @@ namespace Webfly\Helper;
 
 class Functions
 {
+
+    static function getFirstProfileBuyer(int $userId)
+    {
+        \Bitrix\Main\Loader::includeModule('sale');
+
+        global $USER;
+        $dbProfiles = CSaleOrderUserProps::GetList(
+            ["ID" => "ASC"],
+            ["USER_ID" => $userId,], false, ['nTopCount' => 1],
+            ["ID", "NAME", "USER_ID"]
+        );
+
+        $arItems = [];
+        while ($profile = $dbProfiles->Fetch()) {
+            $arItems = $profile;
+        }
+
+        return $arItems;
+    }
 
 
     public static function sendMailNewOrder($orderID) //https://webfly.bitrix24.ru/workgroups/group/127/tasks/task/view/27035/
@@ -174,6 +195,62 @@ class Functions
         $filter['PROPERTY_ROZNICHNYY_SEGMENT_VALUE'] = 'да';
     }
 
+    public
+    static function catalogOffersRoz($arItem)
+    {
+        if ($arItem['OFFERS']) {
+            foreach ($arItem['OFFERS'] as $keyOffer => $arOffer) {
+                if ($arOffer['PROPERTIES']['ROZNICHNYY_SEGMENT']['VALUE'] != "Да") {
+                    unset($arItem['OFFERS'][$keyOffer]);
+                }
+            }
+        }
+        if ($arItem['JS_OFFERS']) {
+            foreach ($arItem['JS_OFFERS'] as $keyOffer => $arOffer) {
+
+                if ($arOffer['DISPLAY_PROPERTIES']) {
+                    foreach ($arOffer['DISPLAY_PROPERTIES'] as $offer) {
+                        if ($offer['CODE'] == 'ROZNICHNYY_SEGMENT' && $offer['VALUE'] != "Да") {
+                            unset($arItem['JS_OFFERS'][$keyOffer]);
+                        }
+                    }
+                } else {
+                    unset($arItem['JS_OFFERS'][$keyOffer]);
+                }
+
+            }
+        }
+        return $arItem;
+    }
+
+    public
+    static function catalogOffersOpt($arItem)
+    {
+        if ($arItem['OFFERS']) {
+            foreach ($arItem['OFFERS'] as $keyOffer => $arOffer) {
+                if ($arOffer['PROPERTIES']['OPTOVYY_SEGMENT']['VALUE'] != "Да") {
+                    unset($arItem['OFFERS'][$keyOffer]);
+                }
+            }
+        }
+        if ($arItem['JS_OFFERS']) {
+            foreach ($arItem['JS_OFFERS'] as $keyOffer => $arOffer) {
+
+                if ($arOffer['DISPLAY_PROPERTIES']) {
+                    foreach ($arOffer['DISPLAY_PROPERTIES'] as $offer) {
+                        if ($offer['CODE'] == 'OPTOVYY_SEGMENT' && $offer['VALUE'] != "Да") {
+                            unset($arItem['JS_OFFERS'][$keyOffer]);
+                        }
+                    }
+                } else {
+                    unset($arItem['JS_OFFERS'][$keyOffer]);
+                }
+
+            }
+        }
+        return $arItem;
+    }
+
 
     public
     static function changeFilterOpt(&$filter)
@@ -214,6 +291,36 @@ class Functions
                 $arSections[$sectId]['CNT'] = $obSect['CNT'];
             }
         }
+    }
+
+    public static function checkPurchasedProduct($idProduct) // для отзывов проверяем что товар данный юзер купил
+    {
+        if (empty($idProduct)) return false;
+        global $USER;
+        $userID = $USER->GetID();
+
+        \Bitrix\Main\Loader::includeModule('sale');
+
+
+        $arOffers = \CCatalogSKU::getOffersList($idProduct);
+        if (!empty($arOffers)) $idProduct = array_keys($arOffers[$idProduct]);
+
+        $dbResItems = \Bitrix\Sale\Basket::getList([
+            'select' => [
+                'PRODUCT_ID', 'ORDER-' => 'ORDER'
+            ],
+            'filter' => [
+                'PRODUCT_ID' => $idProduct, 'ORDER-USER_ID' => $userID, 'ORDER-LID' => 's1', 'ORDER-STATUS_ID' => 'F'
+            ],
+            'runtime' => [new \Bitrix\Main\Entity\ReferenceField('ORDER', '\Bitrix\Sale\OrderTable', array('=this.ORDER_ID' => 'ref.ID'), array('join_type' => 'LEFT')),]
+        ]);
+
+        while ($item = $dbResItems->fetch()) {
+            return true;
+        }
+
+        return false;
+
     }
 
 
