@@ -32,3 +32,4 @@ bitrix/templates/*
 !bitrix/templates/desktop_app/
 !bitrix/templates/learning/
 !bitrix/templates/pub/
+!bitrix/templates/aspro_max/
