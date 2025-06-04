@@ -101,7 +101,27 @@ if (!empty($arResult['ITEMS']))
 
 	foreach ($arResult['ITEMS'] as $key => $arItem)
 	{
-		$arItem['CATALOG_QUANTITY'] = (
+
+//        $arItem['OFFERS'] = array_filter($arItem['OFFERS'], function ($offer) {
+//            $segment = mb_strtolower(trim($offer['PROPERTIES']['ROZNICHNYY_SEGMENT']['VALUE'] ?? ''));
+//            $upakovka = mb_strtolower(trim($offer['PROPERTIES']['UPAKOVKA']['VALUE'] ?? ''));
+//
+//            return $segment === 'да' && stripos($upakovka, 'пробник') === false;
+//        });
+        $arItem['OFFERS'] = array_filter($arItem['OFFERS'], function ($offer) {
+            $segment = mb_strtolower(trim($offer['PROPERTIES']['ROZNICHNYY_SEGMENT']['VALUE'] ?? ''));
+            $upakovka = mb_strtolower(trim($offer['PROPERTIES']['UPAKOVKA']['VALUE'] ?? ''));
+            $price = $offer['MIN_PRICE']['VALUE'] ?? null;
+
+            return (
+                $segment === 'да' &&
+                stripos($upakovka, 'упак') === 0 &&
+                $price !== null && $price > 0
+            );
+        });
+
+
+        $arItem['CATALOG_QUANTITY'] = (
 		0 < $arItem['CATALOG_QUANTITY'] && is_float($arItem['CATALOG_MEASURE_RATIO'])
 			? floatval($arItem['CATALOG_QUANTITY'])
 			: intval($arItem['CATALOG_QUANTITY'])
